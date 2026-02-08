@@ -33,15 +33,19 @@ const usernames = new Map();
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join-room', ({ roomId, username }) => {
-    socket.join(roomId);
+  socket.on("join-room", ({ roomId, username }) => {
+  socket.join(roomId);
 
-    if (!rooms.has(roomId)) {
-      rooms.set(roomId, new Set());
-    }
+  const clients = Array.from(
+    io.sockets.adapter.rooms.get(roomId) || []
+  );
 
-    rooms.get(roomId).add(socket.id);
-    usernames.set(socket.id, username || 'Anonymous');
+  socket.emit("existing-users", clients.filter(id => id !== socket.id));
+
+  socket.to(roomId).emit("user-connected", {
+    userId: socket.id
+  });
+});
 
     // Notify others
     socket.to(roomId).emit('user-connected', {
