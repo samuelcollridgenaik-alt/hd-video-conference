@@ -8,6 +8,10 @@ const io = require('socket.io')(server, {
   },
   maxHttpBufferSize: 1e8 // 100 MB for large data transfers
 });
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 const cors = require('cors');
 
 app.use(cors());
