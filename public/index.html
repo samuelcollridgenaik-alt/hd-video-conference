@@ -1,171 +1,333 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>HD Video Conference</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: white;
-      text-align: center;
-    }
-    video {
-      width: 300px;
-      margin: 10px;
-      background: black;
-    }
-    input, button {
-      padding: 8px;
-      margin: 5px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>GlassMeet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+:root {
+  --glass: rgba(255,255,255,0.12);
+  --border: rgba(255,255,255,0.25);
+  --accent: #6cf;
+}
+
+* { box-sizing: border-box; font-family: Inter, system-ui, sans-serif; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  background: radial-gradient(circle at top, #1d1f33, #0b0c13);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: 96%;
+  max-width: 1300px;
+  height: 92vh;
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  border-radius: 26px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+}
+
+/* ---------- HEADER ---------- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.join {
+  display: flex;
+  gap: 10px;
+}
+
+.join input {
+  background: rgba(255,255,255,.15);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.join button {
+  background: linear-gradient(135deg, #6cf, #8af);
+  border: none;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ---------- VIDEO GRID ---------- */
+.videos {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+  gap: 16px;
+  margin-top: 16px;
+  overflow-y: auto;
+}
+
+.video-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: black;
+  border: 2px solid transparent;
+}
+
+.video-card.speaking {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent);
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.label {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0,0,0,.6);
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+/* ---------- CONTROLS ---------- */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.controls button {
+  background: rgba(255,255,255,.14);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.controls button.active {
+  background: #ff5c5c;
+}
+
+/* ---------- CHAT ---------- */
+.chat {
+  position: absolute;
+  right: 24px;
+  bottom: 90px;
+  width: 280px;
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  border-radius: 18px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.chat input {
+  margin-top: 6px;
+  background: rgba(255,255,255,.2);
+  border: none;
+  padding: 8px;
+  border-radius: 10px;
+  color: white;
+}
+</style>
 </head>
+
 <body>
 
-  <h2>HD Video Conference</h2>
+<div class="app">
+  <header>
+    <h1>✨ GlassMeet</h1>
+    <div class="join">
+      <input id="roomId" placeholder="Room ID" />
+      <input id="username" placeholder="Name" />
+      <button onclick="joinRoom()">Join</button>
+    </div>
+  </header>
 
-  <input id="roomId" placeholder="Room ID" />
-  <input id="username" placeholder="Username" />
-  <button onclick="joinRoom()">Join Room</button>
-
-  <div>
-    <video id="localVideo" autoplay muted playsinline></video>
+  <div class="videos" id="videos">
+    <div class="video-card" id="localCard">
+      <video id="localVideo" autoplay muted playsinline></video>
+      <div class="label">You</div>
+    </div>
   </div>
 
-  <div id="remoteVideos"></div>
+  <div class="controls">
+    <button onclick="toggleMute()">🎤</button>
+    <button onclick="toggleCamera()">📷</button>
+    <button onclick="shareScreen()">🖥</button>
+    <button onclick="raiseHand()">✋</button>
+    <button onclick="lockRoom()">🔐</button>
+  </div>
 
-  <!-- Socket.IO -->
-  <script src="/socket.io/socket.io.js"></script>
+  <div class="chat">
+    <div class="chat-messages" id="chat"></div>
+    <input id="chatInput" placeholder="Message…" onkeydown="sendChat(event)" />
+  </div>
+</div>
 
-  <script>
-    const socket = io();
+<script src="/socket.io/socket.io.js"></script>
 
-    let localStream;
-    const peerConnections = {};
+<script>
+const socket = io();
+let localStream, screenStream;
+const peers = {};
+let audioEnabled = true;
+let videoEnabled = true;
+let roomLocked = false;
 
-    // 1️⃣ Get camera + mic
-    async function startMedia() {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
+// ---------- MEDIA ----------
+async function initMedia() {
+  localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  localVideo.srcObject = localStream;
+  detectSpeaking(localStream, localCard);
+}
+initMedia();
 
-      document.getElementById("localVideo").srcObject = localStream;
-    }
+// ---------- JOIN ----------
+function joinRoom() {
+  socket.emit("join-room", {
+    roomId: roomId.value,
+    username: username.value || "Guest"
+  });
+}
 
-    startMedia();
+// ---------- PEER ----------
+function createPeer(id) {
+  const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
+  peers[id] = pc;
 
-    // 2️⃣ Join room
-    function joinRoom() {
-      const roomId = document.getElementById("roomId").value;
-      const username = document.getElementById("username").value;
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
-      if (!roomId) {
-        alert("Enter Room ID");
-        return;
-      }
+  pc.ontrack = e => addVideo(id, e.streams[0]);
+  pc.onicecandidate = e => e.candidate && socket.emit("ice-candidate",{to:id,candidate:e.candidate});
 
-      socket.emit("join-room", { roomId, username });
-    }
+  return pc;
+}
 
-    // 3️⃣ Create Peer Connection
-    async function createPeerConnection(userId) {
-      if (peerConnections[userId]) return peerConnections[userId];
+function addVideo(id, stream) {
+  if (document.getElementById(id)) return;
 
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" }
-        ]
-      });
+  const card = document.createElement("div");
+  card.className = "video-card";
+  card.id = id;
 
-      peerConnections[userId] = pc;
+  const v = document.createElement("video");
+  v.autoplay = true;
+  v.srcObject = stream;
 
-      // Add local tracks
-      localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
-      });
+  card.appendChild(v);
+  videos.appendChild(card);
+  detectSpeaking(stream, card);
+}
 
-      // Send ICE candidates
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit("ice-candidate", {
-            to: userId,
-            candidate: event.candidate
-          });
-        }
-      };
+// ---------- SIGNALING ----------
+socket.on("user-connected", async ({ userId }) => {
+  const pc = createPeer(userId);
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  socket.emit("offer",{to:userId,offer});
+});
 
-      // Receive remote stream
-      pc.ontrack = (event) => {
-        let remoteVideo = document.getElementById("video-" + userId);
+socket.on("offer", async ({ from, offer }) => {
+  const pc = createPeer(from);
+  await pc.setRemoteDescription(offer);
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  socket.emit("answer",{to:from,answer});
+});
 
-        if (!remoteVideo) {
-          remoteVideo = document.createElement("video");
-          remoteVideo.id = "video-" + userId;
-          remoteVideo.autoplay = true;
-          remoteVideo.playsInline = true;
-          document.getElementById("remoteVideos").appendChild(remoteVideo);
-        }
+socket.on("answer", ({ from, answer }) =>
+  peers[from].setRemoteDescription(answer)
+);
 
-        remoteVideo.srcObject = event.streams[0];
-      };
+socket.on("ice-candidate", ({ from, candidate }) =>
+  peers[from]?.addIceCandidate(candidate)
+);
 
-      return pc;
-    }
+// ---------- CONTROLS ----------
+function toggleMute() {
+  audioEnabled = !audioEnabled;
+  localStream.getAudioTracks()[0].enabled = audioEnabled;
+}
 
-    // 4️⃣ Existing user creates offer
-    socket.on("user-connected", async ({ userId }) => {
-      const pc = await createPeerConnection(userId);
+function toggleCamera() {
+  videoEnabled = !videoEnabled;
+  localStream.getVideoTracks()[0].enabled = videoEnabled;
+}
 
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+async function shareScreen() {
+  screenStream = await navigator.mediaDevices.getDisplayMedia({ video:true });
+  const track = screenStream.getVideoTracks()[0];
+  Object.values(peers).forEach(pc => {
+    pc.getSenders().find(s=>s.track.kind==="video").replaceTrack(track);
+  });
+  track.onended = () => location.reload();
+}
 
-      socket.emit("offer", {
-        to: userId,
-        offer
-      });
-    });
+function raiseHand() {
+  socket.emit("raise-hand",{ roomId:roomId.value, raised:true });
+}
 
-    // 5️⃣ New user receives offer and answers
-    socket.on("offer", async ({ from, offer }) => {
-      const pc = await createPeerConnection(from);
+function lockRoom() {
+  roomLocked = !roomLocked;
+  alert(roomLocked ? "Room Locked" : "Room Unlocked");
+}
 
-      await pc.setRemoteDescription(offer);
+// ---------- CHAT ----------
+function sendChat(e){
+  if(e.key==="Enter"){
+    socket.emit("chat-message",{ roomId:roomId.value, message:e.target.value });
+    e.target.value="";
+  }
+}
+socket.on("chat-message", d=>{
+  chat.innerHTML += `<div><b>${d.username}:</b> ${d.message}</div>`;
+});
 
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
+// ---------- SPEAKING BORDER ----------
+function detectSpeaking(stream, card){
+  const ctx = new AudioContext();
+  const analyser = ctx.createAnalyser();
+  ctx.createMediaStreamSource(stream).connect(analyser);
+  const data = new Uint8Array(analyser.frequencyBinCount);
 
-      socket.emit("answer", {
-        to: from,
-        answer
-      });
-    });
-
-    // 6️⃣ Existing user receives answer
-    socket.on("answer", async ({ from, answer }) => {
-      await peerConnections[from].setRemoteDescription(answer);
-    });
-
-    // 7️⃣ ICE candidates
-    socket.on("ice-candidate", async ({ from, candidate }) => {
-      if (candidate) {
-        await peerConnections[from].addIceCandidate(candidate);
-      }
-    });
-
-    // 8️⃣ User disconnected
-    socket.on("user-disconnected", ({ userId }) => {
-      if (peerConnections[userId]) {
-        peerConnections[userId].close();
-        delete peerConnections[userId];
-      }
-
-      const video = document.getElementById("video-" + userId);
-      if (video) video.remove();
-    });
-  </script>
+  setInterval(()=>{
+    analyser.getByteFrequencyData(data);
+    const vol = data.reduce((a,b)=>a+b)/data.length;
+    card.classList.toggle("speaking", vol > 35);
+  },200);
+}
+</script>
 
 </body>
 </html>
