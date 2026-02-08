@@ -45,7 +45,6 @@ io.on('connection', (socket) => {
   socket.to(roomId).emit("user-connected", {
     userId: socket.id
   });
-});
 
     // Notify others
     socket.to(roomId).emit('user-connected', {
