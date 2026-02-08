@@ -16,12 +16,6 @@ const io = require('socket.io')(server, {
   pingTimeout: 60000,
   pingInterval: 25000
 });
-const peerConnection = new RTCPeerConnection({
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" }
-  ]
-});
 
 // Middleware
 app.use(cors());
