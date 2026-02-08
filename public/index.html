@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>GlassMeet</title>
+<title>PlayWithMeNow</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-:root {
-  --glass: rgba(255,255,255,0.12);
-  --border: rgba(255,255,255,0.25);
-  --accent: #6cf;
-}
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
-* { box-sizing: border-box; font-family: Inter, system-ui, sans-serif; }
+<style>
+* {
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
 
 body {
   margin: 0;
   height: 100vh;
-  background: radial-gradient(circle at top, #1d1f33, #0b0c13);
+  background: radial-gradient(circle at top, #1b1e35, #07080f);
   color: white;
   display: flex;
   justify-content: center;
@@ -25,19 +25,19 @@ body {
 }
 
 .app {
-  width: 96%;
-  max-width: 1300px;
+  width: 95%;
+  max-width: 1200px;
   height: 92vh;
-  background: var(--glass);
-  backdrop-filter: blur(24px);
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(22px);
   border-radius: 26px;
-  padding: 18px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
 }
 
-/* ---------- HEADER ---------- */
+/* HEADER */
 header {
   display: flex;
   justify-content: space-between;
@@ -45,53 +45,55 @@ header {
 }
 
 header h1 {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 600;
+  letter-spacing: 1px;
 }
 
+/* JOIN BAR */
 .join {
   display: flex;
   gap: 10px;
 }
 
 .join input {
-  background: rgba(255,255,255,.15);
-  border: 1px solid var(--border);
-  color: white;
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 14px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.18);
+  color: white;
 }
 
 .join button {
-  background: linear-gradient(135deg, #6cf, #8af);
-  border: none;
-  border-radius: 14px;
   padding: 10px 18px;
-  font-weight: 600;
+  border-radius: 16px;
+  border: none;
   cursor: pointer;
+  background: linear-gradient(135deg, #6cf, #9af);
+  font-weight: 600;
 }
 
-/* ---------- VIDEO GRID ---------- */
+/* VIDEO GRID */
 .videos {
   flex: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
-  gap: 16px;
   margin-top: 16px;
-  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
 }
 
 .video-card {
   position: relative;
-  border-radius: 20px;
+  border-radius: 18px;
   overflow: hidden;
   background: black;
   border: 2px solid transparent;
 }
 
 .video-card.speaking {
-  border-color: var(--accent);
-  box-shadow: 0 0 20px var(--accent);
+  border-color: #6cf;
+  box-shadow: 0 0 18px #6cf;
 }
 
 video {
@@ -104,40 +106,37 @@ video {
   position: absolute;
   bottom: 8px;
   left: 8px;
-  background: rgba(0,0,0,.6);
+  background: rgba(0,0,0,0.6);
   padding: 4px 10px;
   border-radius: 10px;
   font-size: 12px;
 }
 
-/* ---------- CONTROLS ---------- */
+/* CONTROLS */
 .controls {
   display: flex;
   justify-content: center;
   gap: 14px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .controls button {
-  background: rgba(255,255,255,.14);
-  border: 1px solid var(--border);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 14px;
+  background: rgba(255,255,255,0.2);
+  border: none;
+  border-radius: 16px;
+  padding: 10px 16px;
   cursor: pointer;
+  color: white;
+  font-size: 14px;
 }
 
-.controls button.active {
-  background: #ff5c5c;
-}
-
-/* ---------- CHAT ---------- */
+/* CHAT */
 .chat {
   position: absolute;
   right: 24px;
   bottom: 90px;
-  width: 280px;
-  background: var(--glass);
+  width: 260px;
+  background: rgba(255,255,255,0.15);
   backdrop-filter: blur(18px);
   border-radius: 18px;
   padding: 10px;
@@ -153,10 +152,11 @@ video {
 
 .chat input {
   margin-top: 6px;
-  background: rgba(255,255,255,.2);
-  border: none;
   padding: 8px;
   border-radius: 10px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.2);
   color: white;
 }
 </style>
@@ -166,10 +166,10 @@ video {
 
 <div class="app">
   <header>
-    <h1>✨ GlassMeet</h1>
+    <h1>✨ PlayWithMeNow</h1>
     <div class="join">
       <input id="roomId" placeholder="Room ID" />
-      <input id="username" placeholder="Name" />
+      <input id="username" placeholder="Your name" />
       <button onclick="joinRoom()">Join</button>
     </div>
   </header>
@@ -182,16 +182,14 @@ video {
   </div>
 
   <div class="controls">
-    <button onclick="toggleMute()">🎤</button>
-    <button onclick="toggleCamera()">📷</button>
-    <button onclick="shareScreen()">🖥</button>
-    <button onclick="raiseHand()">✋</button>
-    <button onclick="lockRoom()">🔐</button>
+    <button onclick="toggleMute()">🎤 Mute</button>
+    <button onclick="toggleCamera()">📷 Camera</button>
+    <button onclick="raiseHand()">✋ Raise</button>
   </div>
 
   <div class="chat">
     <div class="chat-messages" id="chat"></div>
-    <input id="chatInput" placeholder="Message…" onkeydown="sendChat(event)" />
+    <input id="chatInput" placeholder="Type message..." onkeydown="sendChat(event)">
   </div>
 </div>
 
@@ -199,42 +197,45 @@ video {
 
 <script>
 const socket = io();
-let localStream, screenStream;
+let localStream;
 const peers = {};
 let audioEnabled = true;
 let videoEnabled = true;
-let roomLocked = false;
 
-// ---------- MEDIA ----------
-async function initMedia() {
+/* MEDIA */
+async function startMedia() {
   localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
   localVideo.srcObject = localStream;
   detectSpeaking(localStream, localCard);
 }
-initMedia();
+startMedia();
 
-// ---------- JOIN ----------
+/* JOIN */
 function joinRoom() {
+  if (!roomId.value) return alert("Enter Room ID");
   socket.emit("join-room", {
     roomId: roomId.value,
     username: username.value || "Guest"
   });
 }
 
-// ---------- PEER ----------
+/* PEER */
 function createPeer(id) {
-  const pc = new RTCPeerConnection({ iceServers:[{urls:"stun:stun.l.google.com:19302"}] });
-  peers[id] = pc;
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls:"stun:stun.l.google.com:19302" }]
+  });
 
+  peers[id] = pc;
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
-  pc.ontrack = e => addVideo(id, e.streams[0]);
-  pc.onicecandidate = e => e.candidate && socket.emit("ice-candidate",{to:id,candidate:e.candidate});
+  pc.ontrack = e => addRemoteVideo(id, e.streams[0]);
+  pc.onicecandidate = e => e.candidate &&
+    socket.emit("ice-candidate",{ to:id, candidate:e.candidate });
 
   return pc;
 }
 
-function addVideo(id, stream) {
+function addRemoteVideo(id, stream) {
   if (document.getElementById(id)) return;
 
   const card = document.createElement("div");
@@ -243,6 +244,7 @@ function addVideo(id, stream) {
 
   const v = document.createElement("video");
   v.autoplay = true;
+  v.playsInline = true;
   v.srcObject = stream;
 
   card.appendChild(v);
@@ -250,12 +252,12 @@ function addVideo(id, stream) {
   detectSpeaking(stream, card);
 }
 
-// ---------- SIGNALING ----------
+/* SIGNALING */
 socket.on("user-connected", async ({ userId }) => {
   const pc = createPeer(userId);
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  socket.emit("offer",{to:userId,offer});
+  socket.emit("offer",{ to:userId, offer });
 });
 
 socket.on("offer", async ({ from, offer }) => {
@@ -263,18 +265,18 @@ socket.on("offer", async ({ from, offer }) => {
   await pc.setRemoteDescription(offer);
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
-  socket.emit("answer",{to:from,answer});
+  socket.emit("answer",{ to:from, answer });
 });
 
 socket.on("answer", ({ from, answer }) =>
-  peers[from].setRemoteDescription(answer)
+  peers[from]?.setRemoteDescription(answer)
 );
 
 socket.on("ice-candidate", ({ from, candidate }) =>
   peers[from]?.addIceCandidate(candidate)
 );
 
-// ---------- CONTROLS ----------
+/* CONTROLS */
 function toggleMute() {
   audioEnabled = !audioEnabled;
   localStream.getAudioTracks()[0].enabled = audioEnabled;
@@ -285,47 +287,41 @@ function toggleCamera() {
   localStream.getVideoTracks()[0].enabled = videoEnabled;
 }
 
-async function shareScreen() {
-  screenStream = await navigator.mediaDevices.getDisplayMedia({ video:true });
-  const track = screenStream.getVideoTracks()[0];
-  Object.values(peers).forEach(pc => {
-    pc.getSenders().find(s=>s.track.kind==="video").replaceTrack(track);
-  });
-  track.onended = () => location.reload();
-}
-
 function raiseHand() {
-  socket.emit("raise-hand",{ roomId:roomId.value, raised:true });
+  socket.emit("chat-message", {
+    roomId: roomId.value,
+    message: "✋ raised hand"
+  });
 }
 
-function lockRoom() {
-  roomLocked = !roomLocked;
-  alert(roomLocked ? "Room Locked" : "Room Unlocked");
-}
-
-// ---------- CHAT ----------
-function sendChat(e){
-  if(e.key==="Enter"){
-    socket.emit("chat-message",{ roomId:roomId.value, message:e.target.value });
-    e.target.value="";
+/* CHAT */
+function sendChat(e) {
+  if (e.key === "Enter" && e.target.value) {
+    socket.emit("chat-message", {
+      roomId: roomId.value,
+      message: e.target.value
+    });
+    e.target.value = "";
   }
 }
-socket.on("chat-message", d=>{
+
+socket.on("chat-message", d => {
   chat.innerHTML += `<div><b>${d.username}:</b> ${d.message}</div>`;
+  chat.scrollTop = chat.scrollHeight;
 });
 
-// ---------- SPEAKING BORDER ----------
-function detectSpeaking(stream, card){
+/* SPEAKING BORDER */
+function detectSpeaking(stream, card) {
   const ctx = new AudioContext();
   const analyser = ctx.createAnalyser();
   ctx.createMediaStreamSource(stream).connect(analyser);
   const data = new Uint8Array(analyser.frequencyBinCount);
 
-  setInterval(()=>{
+  setInterval(() => {
     analyser.getByteFrequencyData(data);
-    const vol = data.reduce((a,b)=>a+b)/data.length;
-    card.classList.toggle("speaking", vol > 35);
-  },200);
+    const volume = data.reduce((a,b)=>a+b) / data.length;
+    card.classList.toggle("speaking", volume > 35);
+  }, 200);
 }
 </script>
 
