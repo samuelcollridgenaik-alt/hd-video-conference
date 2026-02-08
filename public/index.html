@@ -8,6 +8,52 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+const socket = io(); // auto connects to same origin (Render works)
+
+const peerConnections = {};
+
+const rtcConfig = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" }
+  ]
+};
+
+async function createPeerConnection(userId) {
+  const pc = new RTCPeerConnection(rtcConfig);
+
+  // Send ICE candidates
+  pc.onicecandidate = (event) => {
+    if (event.candidate) {
+      socket.emit("ice-candidate", {
+        to: userId,
+        candidate: event.candidate
+      });
+    }
+  };
+
+  // Receive remote video
+  pc.ontrack = (event) => {
+    const video = document.createElement("video");
+    video.srcObject = event.streams[0];
+    video.autoplay = true;
+    document.body.appendChild(video);
+  };
+
+  // Add local tracks
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true
+  });
+
+  stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+  peerConnections[userId] = pc;
+  return pc;
+}
+</script>
+
     <style>
         * {
             margin: 0;
