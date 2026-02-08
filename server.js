@@ -1,31 +1,32 @@
 const express = require('express');
+const http = require('http');
+const cors = require('cors');
+
 const app = express();
-const server = require('http').createServer(app);
+app.set('trust proxy', 1);
+
+const server = http.createServer(app);
+
 const io = require('socket.io')(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
   },
-  maxHttpBufferSize: 1e8 // 100 MB for large data transfers
-});
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-const io = require('socket.io')(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  },
-  maxHttpBufferSize: 1e8,
+  maxHttpBufferSize: 1e8, // 100 MB
   pingTimeout: 60000,
   pingInterval: 25000
 });
 
-const cors = require('cors');
-
+// Middleware
 app.use(cors());
 app.use(express.static('public'));
 
+// Health check (for Render)
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// In-memory state
 const rooms = new Map();
 const usernames = new Map();
 
@@ -34,14 +35,15 @@ io.on('connection', (socket) => {
 
   socket.on('join-room', ({ roomId, username }) => {
     socket.join(roomId);
-    
+
     if (!rooms.has(roomId)) {
       rooms.set(roomId, new Set());
     }
+
     rooms.get(roomId).add(socket.id);
     usernames.set(socket.id, username || 'Anonymous');
 
-    // Notify others in the room
+    // Notify others
     socket.to(roomId).emit('user-connected', {
       userId: socket.id,
       username: usernames.get(socket.id),
@@ -63,7 +65,7 @@ io.on('connection', (socket) => {
   });
 
   // WebRTC signaling
-  socket.on('offer', ({ to, offer, roomId }) => {
+  socket.on('offer', ({ to, offer }) => {
     socket.to(to).emit('offer', {
       from: socket.id,
       offer,
@@ -85,7 +87,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Chat messages
+  // Chat
   socket.on('chat-message', ({ roomId, message }) => {
     io.to(roomId).emit('chat-message', {
       userId: socket.id,
@@ -121,7 +123,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Audio/Video status
+  // Media status
   socket.on('media-status', ({ roomId, audio, video }) => {
     socket.to(roomId).emit('user-media-status', {
       userId: socket.id,
@@ -131,33 +133,32 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
     const username = usernames.get(socket.id);
+    console.log('User disconnected:', socket.id);
 
-    
-    // Remove from all rooms
     rooms.forEach((participants, roomId) => {
       if (participants.has(socket.id)) {
         participants.delete(socket.id);
+
         socket.to(roomId).emit('user-disconnected', {
           userId: socket.id,
-          username: usernames.get(socket.id)
+          username
         });
-        
+
         if (participants.size === 0) {
           rooms.delete(roomId);
         }
       }
     });
-    
+
     usernames.delete(socket.id);
   });
 });
 
+// Start server (Render-compatible)
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📹 HD Video Conferencing App Ready!`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-app.set('trust proxy', 1);
+
 
