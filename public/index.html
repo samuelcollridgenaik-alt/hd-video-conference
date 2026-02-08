@@ -1,1064 +1,171 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HD Video Conference - 4K Quality</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script>
-const socket = io(); // auto connects to same origin (Render works)
-
-const peerConnections = {};
-
-const rtcConfig = {
-  iceServers: [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" }
-  ]
-};
-
-async function createPeerConnection(userId) {
-  const pc = new RTCPeerConnection(rtcConfig);
-
-  // Send ICE candidates
-  pc.onicecandidate = (event) => {
-    if (event.candidate) {
-      socket.emit("ice-candidate", {
-        to: userId,
-        candidate: event.candidate
-      });
+  <meta charset="UTF-8">
+  <title>HD Video Conference</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
     }
-  };
-
-  // Receive remote video
-  pc.ontrack = (event) => {
-    const video = document.createElement("video");
-    video.srcObject = event.streams[0];
-    video.autoplay = true;
-    document.body.appendChild(video);
-  };
-
-  // Add local tracks
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true
-  });
-
-  stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-  peerConnections[userId] = pc;
-  return pc;
-}
-</script>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 25%, #7e22ce 50%, #ec4899 75%, #f97316 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        }
-
-        .glass-dark {
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .quality-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-        }
-
-        @keyframes reactionFloat {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px) scale(1.5);
-            }
-        }
-
-        .reaction-emoji {
-            position: absolute;
-            font-size: 48px;
-            animation: reactionFloat 2s ease-out forwards;
-            pointer-events: none;
-            z-index: 1000;
-        }
-    </style>
+    video {
+      width: 300px;
+      margin: 10px;
+      background: black;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px;
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
-    
-    <script type="text/babel">
-        const { useState, useRef, useEffect, useCallback } = React;
 
-        const socket = io('http://localhost:3000');
-
-        function VideoConferenceApp() {
-            const [username, setUsername] = useState('');
-            const [roomId, setRoomId] = useState('');
-            const [isInCall, setIsInCall] = useState(false);
-            const [isVideoOn, setIsVideoOn] = useState(true);
-            const [isAudioOn, setIsAudioOn] = useState(true);
-            const [isScreenSharing, setIsScreenSharing] = useState(false);
-            const [participants, setParticipants] = useState([]);
-            const [messages, setMessages] = useState([]);
-            const [chatInput, setChatInput] = useState('');
-            const [showChat, setShowChat] = useState(false);
-            const [showSettings, setShowSettings] = useState(false);
-            const [videoQuality, setVideoQuality] = useState('4K');
-            const [audioQuality, setAudioQuality] = useState('high');
-            const [viewMode, setViewMode] = useState('grid');
-            const [isRecording, setIsRecording] = useState(false);
-            const [reactions, setReactions] = useState([]);
-            const [handRaised, setHandRaised] = useState(false);
-            const [connectionQuality, setConnectionQuality] = useState('excellent');
-
-            const localVideoRef = useRef(null);
-            const localStreamRef = useRef(null);
-            const screenStreamRef = useRef(null);
-            const peerConnections = useRef({});
-            const remoteStreams = useRef({});
-            const mediaRecorder = useRef(null);
-            const recordedChunks = useRef([]);
-
-            // WebRTC configuration with multiple STUN/TURN servers
-            const rtcConfig = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun2.l.google.com:19302' },
-                    { urls: 'stun:stun.services.mozilla.com' }
-                ],
-                iceCandidatePoolSize: 10
-            };
-
-            // Video quality presets
-            const videoConstraints = {
-                '4K': { width: 3840, height: 2160, frameRate: 60 },
-                '1080p': { width: 1920, height: 1080, frameRate: 60 },
-                '720p': { width: 1280, height: 720, frameRate: 30 }
-            };
-
-            // Audio quality presets
-            const audioConstraints = {
-                high: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
-                    sampleRate: 48000,
-                    channelCount: 2
-                },
-                medium: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                }
-            };
-
-            useEffect(() => {
-                // Socket event listeners
-                socket.on('room-users', ({ participants: roomParticipants }) => {
-                    setParticipants(roomParticipants);
-                });
-
-                socket.on('user-connected', async ({ userId, username: newUsername, participants: roomParticipants }) => {
-                    setParticipants(roomParticipants);
-                    if (localStreamRef.current) {
-                        await createPeerConnection(userId, true);
-                    }
-                });
-
-                socket.on('user-disconnected', ({ userId }) => {
-                    if (peerConnections.current[userId]) {
-                        peerConnections.current[userId].close();
-                        delete peerConnections.current[userId];
-                    }
-                    delete remoteStreams.current[userId];
-                    setParticipants(prev => prev.filter(p => p.id !== userId));
-                });
-
-                socket.on('offer', async ({ from, offer, username: fromUsername }) => {
-                    await createPeerConnection(from, false);
-                    await peerConnections.current[from].setRemoteDescription(offer);
-                    const answer = await peerConnections.current[from].createAnswer();
-                    await peerConnections.current[from].setLocalDescription(answer);
-                    socket.emit('answer', { to: from, answer });
-                });
-
-                socket.on('answer', async ({ from, answer }) => {
-                    await peerConnections.current[from].setRemoteDescription(answer);
-                });
-
-                socket.on('ice-candidate', async ({ from, candidate }) => {
-                    if (peerConnections.current[from]) {
-                        await peerConnections.current[from].addIceCandidate(candidate);
-                    }
-                });
-
-                socket.on('chat-message', ({ userId, username: msgUsername, message, timestamp }) => {
-                    setMessages(prev => [...prev, { userId, username: msgUsername, message, timestamp }]);
-                });
-
-                socket.on('reaction', ({ userId, emoji }) => {
-                    const id = Date.now() + Math.random();
-                    setReactions(prev => [...prev, { id, emoji, userId }]);
-                    setTimeout(() => {
-                        setReactions(prev => prev.filter(r => r.id !== id));
-                    }, 2000);
-                });
-
-                return () => {
-                    socket.off('room-users');
-                    socket.off('user-connected');
-                    socket.off('user-disconnected');
-                    socket.off('offer');
-                    socket.off('answer');
-                    socket.off('ice-candidate');
-                    socket.off('chat-message');
-                    socket.off('reaction');
-                };
-            }, []);
-
-            const createPeerConnection = async (userId, isInitiator) => {
-                const pc = new RTCPeerConnection(rtcConfig);
-                peerConnections.current[userId] = pc;
-
-                // Add local tracks
-                if (localStreamRef.current) {
-                    localStreamRef.current.getTracks().forEach(track => {
-                        pc.addTrack(track, localStreamRef.current);
-                    });
-                }
-
-                // Handle incoming tracks
-                pc.ontrack = (event) => {
-                    remoteStreams.current[userId] = event.streams[0];
-                    setParticipants(prev => [...prev]);
-                };
-
-                // Handle ICE candidates
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('ice-candidate', {
-                            to: userId,
-                            candidate: event.candidate
-                        });
-                    }
-                };
-
-                // Monitor connection quality
-                pc.oniceconnectionstatechange = () => {
-                    if (pc.iceConnectionState === 'connected') {
-                        setConnectionQuality('excellent');
-                    } else if (pc.iceConnectionState === 'checking') {
-                        setConnectionQuality('good');
-                    } else if (pc.iceConnectionState === 'disconnected') {
-                        setConnectionQuality('poor');
-                    }
-                };
-
-                // Create and send offer if initiator
-                if (isInitiator) {
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-                    socket.emit('offer', { to: userId, offer, roomId });
-                }
-            };
-
-            const startCamera = async () => {
-                try {
-                    const constraints = {
-                        video: videoConstraints[videoQuality],
-                        audio: audioConstraints[audioQuality]
-                    };
-
-                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    localStreamRef.current = stream;
-                    
-                    if (localVideoRef.current) {
-                        localVideoRef.current.srcObject = stream;
-                    }
-
-                    setIsVideoOn(true);
-                    setIsAudioOn(true);
-
-                    // Add tracks to existing peer connections
-                    Object.values(peerConnections.current).forEach(pc => {
-                        stream.getTracks().forEach(track => {
-                            const sender = pc.getSenders().find(s => s.track?.kind === track.kind);
-                            if (sender) {
-                                sender.replaceTrack(track);
-                            } else {
-                                pc.addTrack(track, stream);
-                            }
-                        });
-                    });
-                } catch (err) {
-                    alert('Camera access denied: ' + err.message);
-                }
-            };
-
-            const toggleVideo = () => {
-                if (localStreamRef.current) {
-                    const videoTrack = localStreamRef.current.getVideoTracks()[0];
-                    if (videoTrack) {
-                        videoTrack.enabled = !videoTrack.enabled;
-                        setIsVideoOn(videoTrack.enabled);
-                        socket.emit('media-status', { roomId, video: videoTrack.enabled, audio: isAudioOn });
-                    }
-                }
-            };
-
-            const toggleAudio = () => {
-                if (localStreamRef.current) {
-                    const audioTrack = localStreamRef.current.getAudioTracks()[0];
-                    if (audioTrack) {
-                        audioTrack.enabled = !audioTrack.enabled;
-                        setIsAudioOn(audioTrack.enabled);
-                        socket.emit('media-status', { roomId, audio: audioTrack.enabled, video: isVideoOn });
-                    }
-                }
-            };
-
-            const startScreenShare = async () => {
-                try {
-                    const screenStream = await navigator.mediaDevices.getDisplayMedia({
-                        video: {
-                            width: 3840,
-                            height: 2160,
-                            frameRate: 60
-                        },
-                        audio: {
-                            echoCancellation: true,
-                            noiseSuppression: true,
-                            sampleRate: 48000
-                        }
-                    });
-
-                    screenStreamRef.current = screenStream;
-                    const videoTrack = screenStream.getVideoTracks()[0];
-
-                    // Replace video track in all peer connections
-                    Object.values(peerConnections.current).forEach(pc => {
-                        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                        if (sender) {
-                            sender.replaceTrack(videoTrack);
-                        }
-                    });
-
-                    if (localVideoRef.current) {
-                        localVideoRef.current.srcObject = screenStream;
-                    }
-
-                    setIsScreenSharing(true);
-                    socket.emit('screen-share-status', { roomId, isSharing: true });
-
-                    videoTrack.addEventListener('ended', () => {
-                        stopScreenShare();
-                    });
-                } catch (err) {
-                    console.error('Screen share failed:', err);
-                }
-            };
-
-            const stopScreenShare = async () => {
-                if (screenStreamRef.current) {
-                    screenStreamRef.current.getTracks().forEach(track => track.stop());
-                }
-
-                if (localStreamRef.current) {
-                    const videoTrack = localStreamRef.current.getVideoTracks()[0];
-                    Object.values(peerConnections.current).forEach(pc => {
-                        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-                        if (sender && videoTrack) {
-                            sender.replaceTrack(videoTrack);
-                        }
-                    });
-
-                    if (localVideoRef.current) {
-                        localVideoRef.current.srcObject = localStreamRef.current;
-                    }
-                }
-
-                setIsScreenSharing(false);
-                socket.emit('screen-share-status', { roomId, isSharing: false });
-            };
-
-            const startRecording = () => {
-                if (!localStreamRef.current) return;
-
-                const options = { mimeType: 'video/webm;codecs=vp9,opus' };
-                mediaRecorder.current = new MediaRecorder(localStreamRef.current, options);
-                recordedChunks.current = [];
-
-                mediaRecorder.current.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        recordedChunks.current.push(event.data);
-                    }
-                };
-
-                mediaRecorder.current.onstop = () => {
-                    const blob = new Blob(recordedChunks.current, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `recording-${Date.now()}.webm`;
-                    a.click();
-                };
-
-                mediaRecorder.current.start();
-                setIsRecording(true);
-            };
-
-            const stopRecording = () => {
-                if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-                    mediaRecorder.current.stop();
-                    setIsRecording(false);
-                }
-            };
-
-            const sendMessage = () => {
-                if (chatInput.trim()) {
-                    socket.emit('chat-message', { roomId, message: chatInput });
-                    setChatInput('');
-                }
-            };
-
-            const sendReaction = (emoji) => {
-                socket.emit('reaction', { roomId, emoji });
-                const id = Date.now() + Math.random();
-                setReactions(prev => [...prev, { id, emoji, userId: 'local' }]);
-                setTimeout(() => {
-                    setReactions(prev => prev.filter(r => r.id !== id));
-                }, 2000);
-            };
-
-            const toggleRaiseHand = () => {
-                const newState = !handRaised;
-                setHandRaised(newState);
-                socket.emit('raise-hand', { roomId, raised: newState });
-            };
-
-            const joinCall = async () => {
-                if (!username.trim() || !roomId.trim()) {
-                    alert('Please enter username and room ID');
-                    return;
-                }
-
-                await startCamera();
-                socket.emit('join-room', { roomId, username });
-                setIsInCall(true);
-            };
-
-            const leaveCall = () => {
-                // Stop all tracks
-                if (localStreamRef.current) {
-                    localStreamRef.current.getTracks().forEach(track => track.stop());
-                }
-                if (screenStreamRef.current) {
-                    screenStreamRef.current.getTracks().forEach(track => track.stop());
-                }
-
-                // Close all peer connections
-                Object.values(peerConnections.current).forEach(pc => pc.close());
-                peerConnections.current = {};
-                remoteStreams.current = {};
-
-                setIsInCall(false);
-                setParticipants([]);
-                setMessages([]);
-            };
-
-            if (!isInCall) {
-                return (
-                    <div style={{
-                        height: '100vh',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '20px'
-                    }}>
-                        <div className="glass" style={{
-                            borderRadius: '30px',
-                            padding: '50px',
-                            maxWidth: '500px',
-                            width: '100%',
-                            animation: 'fadeInUp 0.6s ease'
-                        }}>
-                            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                                <h1 style={{ 
-                                    fontSize: '36px', 
-                                    color: 'white', 
-                                    marginBottom: '10px',
-                                    textShadow: '0 2px 10px rgba(0,0,0,0.3)'
-                                }}>
-                                    🎥 HD Video Conference
-                                </h1>
-                                <span className="quality-badge">4K ULTRA HD</span>
-                            </div>
-
-                            <input
-                                type="text"
-                                placeholder="Enter your name"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '15px 20px',
-                                    fontSize: '16px',
-                                    border: 'none',
-                                    borderRadius: '15px',
-                                    marginBottom: '15px',
-                                    background: 'rgba(255, 255, 255, 0.2)',
-                                    color: 'white',
-                                    outline: 'none'
-                                }}
-                            />
-
-                            <input
-                                type="text"
-                                placeholder="Room ID"
-                                value={roomId}
-                                onChange={(e) => setRoomId(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '15px 20px',
-                                    fontSize: '16px',
-                                    border: 'none',
-                                    borderRadius: '15px',
-                                    marginBottom: '25px',
-                                    background: 'rgba(255, 255, 255, 0.2)',
-                                    color: 'white',
-                                    outline: 'none'
-                                }}
-                                onKeyPress={(e) => e.key === 'Enter' && joinCall()}
-                            />
-
-                            <button
-                                onClick={joinCall}
-                                className="btn"
-                                style={{
-                                    width: '100%',
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white',
-                                    fontSize: '18px',
-                                    padding: '18px',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <span>🚀</span> Join Conference
-                            </button>
-
-                            <div style={{
-                                marginTop: '30px',
-                                padding: '20px',
-                                borderRadius: '15px',
-                                background: 'rgba(255, 255, 255, 0.1)',
-                                fontSize: '13px',
-                                color: 'rgba(255, 255, 255, 0.8)'
-                            }}>
-                                <strong style={{ color: 'white' }}>✨ Features:</strong>
-                                <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
-                                    <li>4K Ultra HD Video (60fps)</li>
-                                    <li>High Fidelity Audio (48kHz)</li>
-                                    <li>Screen Sharing with Audio</li>
-                                    <li>Live Chat & Reactions</li>
-                                    <li>Recording & Virtual Backgrounds</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-                    {/* Header */}
-                    <div className="glass-dark" style={{
-                        padding: '15px 25px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <h2 style={{ color: 'white', fontSize: '20px' }}>Room: {roomId}</h2>
-                            <span className="quality-badge">{videoQuality}</span>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                padding: '5px 12px',
-                                borderRadius: '20px',
-                                background: connectionQuality === 'excellent' ? 'rgba(34, 197, 94, 0.2)' : 
-                                           connectionQuality === 'good' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                color: connectionQuality === 'excellent' ? '#4ade80' : 
-                                       connectionQuality === 'good' ? '#fbbf24' : '#ef4444',
-                                fontSize: '12px',
-                                fontWeight: '600'
-                            }}>
-                                <div style={{
-                                    width: '8px',
-                                    height: '8px',
-                                    borderRadius: '50%',
-                                    background: 'currentColor'
-                                }} />
-                                {connectionQuality}
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button
-                                onClick={() => setShowSettings(!showSettings)}
-                                className="btn glass"
-                                style={{ color: 'white' }}
-                            >
-                                ⚙️
-                            </button>
-                            <button
-                                onClick={leaveCall}
-                                className="btn"
-                                style={{ background: '#ef4444', color: 'white' }}
-                            >
-                                📞 Leave
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
-                        {/* Video Grid */}
-                        <div style={{ 
-                            flex: 1, 
-                            padding: '20px',
-                            display: 'grid',
-                            gridTemplateColumns: viewMode === 'grid' ? 'repeat(auto-fit, minmax(400px, 1fr))' : '1fr',
-                            gap: '20px',
-                            overflow: 'auto'
-                        }}>
-                            {/* Local Video */}
-                            <div className="glass-dark" style={{
-                                borderRadius: '20px',
-                                overflow: 'hidden',
-                                position: 'relative',
-                                aspectRatio: '16/9',
-                                minHeight: '300px'
-                            }}>
-                                <video
-                                    ref={localVideoRef}
-                                    autoPlay
-                                    muted
-                                    playsInline
-                                    style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover'
-                                    }}
-                                />
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: '15px',
-                                    left: '15px',
-                                    background: 'rgba(0, 0, 0, 0.7)',
-                                    color: 'white',
-                                    padding: '8px 15px',
-                                    borderRadius: '10px',
-                                    fontSize: '14px',
-                                    fontWeight: '600'
-                                }}>
-                                    {username} (You) {isScreenSharing && '🖥️'}
-                                </div>
-                                {!isVideoOn && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '50%',
-                                        left: '50%',
-                                        transform: 'translate(-50%, -50%)',
-                                        fontSize: '64px'
-                                    }}>
-                                        👤
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Remote Videos */}
-                            {participants.filter(p => p.id !== socket.id).map(participant => (
-                                <div key={participant.id} className="glass-dark" style={{
-                                    borderRadius: '20px',
-                                    overflow: 'hidden',
-                                    position: 'relative',
-                                    aspectRatio: '16/9',
-                                    minHeight: '300px'
-                                }}>
-                                    <video
-                                        autoPlay
-                                        playsInline
-                                        ref={(el) => {
-                                            if (el && remoteStreams.current[participant.id]) {
-                                                el.srcObject = remoteStreams.current[participant.id];
-                                            }
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover'
-                                        }}
-                                    />
-                                    <div style={{
-                                        position: 'absolute',
-                                        bottom: '15px',
-                                        left: '15px',
-                                        background: 'rgba(0, 0, 0, 0.7)',
-                                        color: 'white',
-                                        padding: '8px 15px',
-                                        borderRadius: '10px',
-                                        fontSize: '14px',
-                                        fontWeight: '600'
-                                    }}>
-                                        {participant.username}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Chat Sidebar */}
-                        {showChat && (
-                            <div className="glass-dark" style={{
-                                width: '350px',
-                                borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                <div style={{
-                                    padding: '20px',
-                                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: 'white',
-                                    fontWeight: '600',
-                                    fontSize: '18px'
-                                }}>
-                                    💬 Chat
-                                </div>
-                                <div style={{
-                                    flex: 1,
-                                    overflowY: 'auto',
-                                    padding: '20px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '10px'
-                                }}>
-                                    {messages.map((msg, idx) => (
-                                        <div key={idx} style={{
-                                            background: 'rgba(255, 255, 255, 0.1)',
-                                            padding: '10px 15px',
-                                            borderRadius: '12px',
-                                            color: 'white'
-                                        }}>
-                                            <div style={{ 
-                                                fontSize: '12px', 
-                                                color: 'rgba(255, 255, 255, 0.6)',
-                                                marginBottom: '5px'
-                                            }}>
-                                                {msg.username}
-                                            </div>
-                                            <div>{msg.message}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div style={{
-                                    padding: '20px',
-                                    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                                    display: 'flex',
-                                    gap: '10px'
-                                }}>
-                                    <input
-                                        type="text"
-                                        value={chatInput}
-                                        onChange={(e) => setChatInput(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                                        placeholder="Type a message..."
-                                        style={{
-                                            flex: 1,
-                                            padding: '12px',
-                                            border: 'none',
-                                            borderRadius: '10px',
-                                            background: 'rgba(255, 255, 255, 0.1)',
-                                            color: 'white',
-                                            outline: 'none'
-                                        }}
-                                    />
-                                    <button
-                                        onClick={sendMessage}
-                                        className="btn"
-                                        style={{
-                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                            color: 'white'
-                                        }}
-                                    >
-                                        Send
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Reactions */}
-                        {reactions.map(reaction => (
-                            <div
-                                key={reaction.id}
-                                className="reaction-emoji"
-                                style={{
-                                    left: `${Math.random() * 80 + 10}%`,
-                                    bottom: '100px'
-                                }}
-                            >
-                                {reaction.emoji}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Controls */}
-                    <div className="glass-dark" style={{
-                        padding: '20px',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        flexWrap: 'wrap'
-                    }}>
-                        <button
-                            onClick={toggleAudio}
-                            className="btn glass"
-                            style={{
-                                background: isAudioOn ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-                                color: 'white'
-                            }}
-                        >
-                            {isAudioOn ? '🎤' : '🔇'}
-                        </button>
-
-                        <button
-                            onClick={toggleVideo}
-                            className="btn glass"
-                            style={{
-                                background: isVideoOn ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-                                color: 'white'
-                            }}
-                        >
-                            {isVideoOn ? '📹' : '📹❌'}
-                        </button>
-
-                        <button
-                            onClick={isScreenSharing ? stopScreenShare : startScreenShare}
-                            className="btn glass"
-                            style={{
-                                background: isScreenSharing ? 'rgba(251, 191, 36, 0.3)' : 'rgba(59, 130, 246, 0.3)',
-                                color: 'white'
-                            }}
-                        >
-                            {isScreenSharing ? '🖥️ Stop' : '🖥️ Share'}
-                        </button>
-
-                        <button
-                            onClick={isRecording ? stopRecording : startRecording}
-                            className="btn glass"
-                            style={{
-                                background: isRecording ? 'rgba(239, 68, 68, 0.3)' : 'rgba(139, 92, 246, 0.3)',
-                                color: 'white'
-                            }}
-                        >
-                            {isRecording ? '⏹️ Stop Rec' : '⏺️ Record'}
-                        </button>
-
-                        <button
-                            onClick={() => setShowChat(!showChat)}
-                            className="btn glass"
-                            style={{ color: 'white' }}
-                        >
-                            💬 Chat {messages.length > 0 && `(${messages.length})`}
-                        </button>
-
-                        <button
-                            onClick={toggleRaiseHand}
-                            className="btn glass"
-                            style={{
-                                background: handRaised ? 'rgba(251, 191, 36, 0.3)' : 'transparent',
-                                color: 'white'
-                            }}
-                        >
-                            ✋
-                        </button>
-
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                            {['👍', '❤️', '😂', '👏', '🎉'].map(emoji => (
-                                <button
-                                    key={emoji}
-                                    onClick={() => sendReaction(emoji)}
-                                    className="btn glass"
-                                    style={{ 
-                                        padding: '12px',
-                                        fontSize: '20px'
-                                    }}
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={() => setViewMode(viewMode === 'grid' ? 'spotlight' : 'grid')}
-                            className="btn glass"
-                            style={{ color: 'white' }}
-                        >
-                            {viewMode === 'grid' ? '📱 Spotlight' : '🎛️ Grid'}
-                        </button>
-                    </div>
-
-                    {/* Settings Panel */}
-                    {showSettings && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '70px',
-                            right: '20px',
-                            width: '300px',
-                            zIndex: 1000
-                        }}>
-                            <div className="glass" style={{
-                                borderRadius: '20px',
-                                padding: '25px',
-                                color: 'white'
-                            }}>
-                                <h3 style={{ marginBottom: '20px', fontSize: '18px' }}>⚙️ Settings</h3>
-                                
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>
-                                        Video Quality
-                                    </label>
-                                    <select
-                                        value={videoQuality}
-                                        onChange={(e) => setVideoQuality(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px',
-                                            borderRadius: '10px',
-                                            border: 'none',
-                                            background: 'rgba(255, 255, 255, 0.2)',
-                                            color: 'white',
-                                            outline: 'none'
-                                        }}
-                                    >
-                                        <option value="4K">4K (3840x2160)</option>
-                                        <option value="1080p">1080p (1920x1080)</option>
-                                        <option value="720p">720p (1280x720)</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px' }}>
-                                        Audio Quality
-                                    </label>
-                                    <select
-                                        value={audioQuality}
-                                        onChange={(e) => setAudioQuality(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px',
-                                            borderRadius: '10px',
-                                            border: 'none',
-                                            background: 'rgba(255, 255, 255, 0.2)',
-                                            color: 'white',
-                                            outline: 'none'
-                                        }}
-                                    >
-                                        <option value="high">High Fidelity (48kHz)</option>
-                                        <option value="medium">Standard (default)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
+  <h2>HD Video Conference</h2>
+
+  <input id="roomId" placeholder="Room ID" />
+  <input id="username" placeholder="Username" />
+  <button onclick="joinRoom()">Join Room</button>
+
+  <div>
+    <video id="localVideo" autoplay muted playsinline></video>
+  </div>
+
+  <div id="remoteVideos"></div>
+
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    const socket = io();
+
+    let localStream;
+    const peerConnections = {};
+
+    // 1️⃣ Get camera + mic
+    async function startMedia() {
+      localStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+
+      document.getElementById("localVideo").srcObject = localStream;
+    }
+
+    startMedia();
+
+    // 2️⃣ Join room
+    function joinRoom() {
+      const roomId = document.getElementById("roomId").value;
+      const username = document.getElementById("username").value;
+
+      if (!roomId) {
+        alert("Enter Room ID");
+        return;
+      }
+
+      socket.emit("join-room", { roomId, username });
+    }
+
+    // 3️⃣ Create Peer Connection
+    async function createPeerConnection(userId) {
+      if (peerConnections[userId]) return peerConnections[userId];
+
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" }
+        ]
+      });
+
+      peerConnections[userId] = pc;
+
+      // Add local tracks
+      localStream.getTracks().forEach(track => {
+        pc.addTrack(track, localStream);
+      });
+
+      // Send ICE candidates
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("ice-candidate", {
+            to: userId,
+            candidate: event.candidate
+          });
+        }
+      };
+
+      // Receive remote stream
+      pc.ontrack = (event) => {
+        let remoteVideo = document.getElementById("video-" + userId);
+
+        if (!remoteVideo) {
+          remoteVideo = document.createElement("video");
+          remoteVideo.id = "video-" + userId;
+          remoteVideo.autoplay = true;
+          remoteVideo.playsInline = true;
+          document.getElementById("remoteVideos").appendChild(remoteVideo);
         }
 
-        ReactDOM.render(<VideoConferenceApp />, document.getElementById('root'));
-    </script>
+        remoteVideo.srcObject = event.streams[0];
+      };
+
+      return pc;
+    }
+
+    // 4️⃣ Existing user creates offer
+    socket.on("user-connected", async ({ userId }) => {
+      const pc = await createPeerConnection(userId);
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      socket.emit("offer", {
+        to: userId,
+        offer
+      });
+    });
+
+    // 5️⃣ New user receives offer and answers
+    socket.on("offer", async ({ from, offer }) => {
+      const pc = await createPeerConnection(from);
+
+      await pc.setRemoteDescription(offer);
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      socket.emit("answer", {
+        to: from,
+        answer
+      });
+    });
+
+    // 6️⃣ Existing user receives answer
+    socket.on("answer", async ({ from, answer }) => {
+      await peerConnections[from].setRemoteDescription(answer);
+    });
+
+    // 7️⃣ ICE candidates
+    socket.on("ice-candidate", async ({ from, candidate }) => {
+      if (candidate) {
+        await peerConnections[from].addIceCandidate(candidate);
+      }
+    });
+
+    // 8️⃣ User disconnected
+    socket.on("user-disconnected", ({ userId }) => {
+      if (peerConnections[userId]) {
+        peerConnections[userId].close();
+        delete peerConnections[userId];
+      }
+
+      const video = document.getElementById("video-" + userId);
+      if (video) video.remove();
+    });
+  </script>
+
 </body>
 </html>
