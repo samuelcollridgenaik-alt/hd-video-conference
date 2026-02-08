@@ -11,6 +11,15 @@ const io = require('socket.io')(server, {
 app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
+const io = require('socket.io')(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  maxHttpBufferSize: 1e8,
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
 
 const cors = require('cors');
 
@@ -123,6 +132,8 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    const username = usernames.get(socket.id);
+
     
     // Remove from all rooms
     rooms.forEach((participants, roomId) => {
@@ -148,3 +159,5 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📹 HD Video Conferencing App Ready!`);
 });
+app.set('trust proxy', 1);
+
