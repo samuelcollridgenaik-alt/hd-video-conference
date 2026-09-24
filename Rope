@@ -1,0 +1,153 @@
+CSA4604 — MERN Stack Lab
+Quick Answers & Code Guide | Experiments 1–7 | VS Code + IntelliSense
+Fast setup
+npm init -y
+npm install express
+# In package.json, add: "type": "module"
+# Create index.js, then run:
+node index.js
+Express starter template (base for Experiments 2, 3, 4 & 6)
+import express from 'express';
+const app = express();
+app.use(express.json());
+app.get('/', (req, res) => {
+res.send('Hello World');
+});
+app.listen(3000, () => console.log('Server running'));
+Request cheat sheet: req.query = query string; req.params = route parameter; req.body = submitted body.
+CSA4604 MERN Lab — Quick Answers Page 1
+Experiment 1 — Git & GitHub
+Initialize → Stage → Commit → Connect remote → Push.
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin <repository-url>
+git push -u origin main
+Experiment 2 — Simple Express application
+Use the Express starter template on page 1. It creates an app, defines a GET route, and listens on port 3000.
+Experiment 3 — HTTP requests, query strings & filtering
+const movies = [
+{ title: 'Movie A', genre: 'Sci-Fi' },
+{ title: 'Movie B', genre: 'Romance' }
+];
+app.get('/search', (req, res) => {
+const genre = req.query.genre;
+const results = movies.filter(m => m.genre === genre);
+res.send(results);
+});
+// Test: http://localhost:3000/search?genre=Sci-Fi
+Native Node.js HTTP alternative (also in the notes)
+import http from 'http';
+const server = http.createServer((req, res) => {
+if (req.url === '/') res.end('Home Page');
+else if (req.url === '/about') res.end('About Page');
+else res.end('Page Not Found');
+});
+server.listen(3000);
+CSA4604 MERN Lab — Quick Answers Page 2
+Experiment 4 — CRUD Routes
+CRUD = Create (POST), Read (GET), Update (PUT), Delete (DELETE). JSON body parsing is required for POST/PUT.
+app.use(express.json());
+let items = [];
+let nextId = 1;
+// CREATE
+app.post('/items', (req, res) => {
+const item = { id: nextId++, ...req.body };
+items.push(item);
+res.send(item);
+});
+// READ all
+app.get('/items', (req, res) => res.send(items));
+// READ one
+app.get('/items/:id', (req, res) => {
+const item = items.find(i => i.id === Number(req.params.id));
+res.send(item);
+});
+// UPDATE
+app.put('/items/:id', (req, res) => {
+const item = items.find(i => i.id === Number(req.params.id));
+if (!item) return res.status(404).send('Not found');
+Object.assign(item, req.body);
+res.send(item);
+});
+// DELETE
+app.delete('/items/:id', (req, res) => {
+const index = items.findIndex(i => i.id === Number(req.params.id));
+if (index === -1) return res.status(404).send('Not found');
+const [deleted] = items.splice(index, 1);
+res.send(deleted);
+});
+Remember: push() adds; find() locates; Object.assign() updates; splice() removes.
+CSA4604 MERN Lab — Quick Answers Page 3
+Experiment 5 — File Handling (fs)
+import fs from 'fs';
+// READ
+fs.readFile('data.txt', 'utf8', (err, data) => {
+if (err) return console.log(err);
+console.log(data);
+});
+// WRITE (overwrites)
+fs.writeFile('data.txt', 'Hello World', err => {
+if (err) return console.log(err);
+console.log('File written');
+});
+// APPEND
+fs.appendFile('data.txt', '\\nNew Line', err => {
+if (err) return console.log(err);
+console.log('Content appended');
+});
+Create data.txt in the project folder. readFile reads; writeFile overwrites; appendFile adds to the end.
+Experiment 6 — Middleware
+app.use(express.static('public'));
+function validateGenre(req, res, next) {
+if (!req.query.genre) {
+return res.send('Genre is required');
+}
+next();
+function handleSearch(req, res) {
+res.send(`Searching for genre: ${req.query.genre}`);
+}
+}
+app.get('/search', validateGenre, handleSearch);
+next() passes control to the next middleware. Middleware order matters.
+CSA4604 MERN Lab — Quick Answers Page 4
+Experiment 7 — Custom Modules
+Create separate .js files. Named exports use braces on import; default exports do not.
+mathUtils.js — named exports
+export const add = (a, b) => a + b;
+export const subtract = (a, b) => a - b;
+export const PI = 3.14;
+stringUtils.js — default export
+const upper = str => str.toUpperCase();
+const lower = str => str.toLowerCase();
+const reverse = str => str.split('').reverse().join('');
+export default { upper, lower, reverse };
+arrayUtils.js — named exports
+export const first = arr => arr[0];
+export const last = arr => arr[arr.length - 1];
+export const sum = arr => arr.reduce((a, b) => a + b, 0);
+fileUtils.js — default + named exports
+import fs from 'fs';
+export default function greet() {
+console.log('Hello from fileUtils');
+}
+export function readData(path) {
+return fs.readFileSync(path, 'utf8');
+}
+export function saveData(path, data) {
+fs.writeFileSync(path, data);
+}
+index.js — import examples
+import { add, subtract, PI } from './mathUtils.js';
+import stringUtils from './stringUtils.js';
+import * as arrayUtils from './arrayUtils.js';
+import greet, { readData, saveData } from './fileUtils.js';
+console.log(add(2, 3));
+console.log(stringUtils.upper('hello'));
+console.log(arrayUtils.sum([1, 2, 3]));
+greet();
+Last-second recall
+GET=read · POST=create · PUT=update · DELETE=remove
+req.query=URL query · req.params=route ID · req.body=JSON body · next()=continue middleware
+Run server: node index.js · Check terminal errors and use VS Code IntelliSense (Ctrl+Space).
+CSA4604 MERN Lab — Quick Answers Page 
