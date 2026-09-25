@@ -1,0 +1,659 @@
+Lab Sheet – 1
+Dart Programming Fundamentals
+Level 1: Dart Programming Fundamentals – Write programs
+demonstrating variables, data types, operators, input/output, and string
+interpolation.
+import 'dart:io';
+void main() {
+stdout.write("Enter your age: ");
+int age = int.parse(stdin.readLineSync()!);
+stdout.write("Enter your salary: ");
+double salary = double.parse(stdin.readLineSync()!);
+stdout.write("Enter your name: ");
+String name = stdin.readLineSync()!;
+stdout.write("Are you a student? (true/false): ");
+bool isStudent = bool.parse(stdin.readLineSync()!);
+stdout.write("Enter your course: ");
+var course = stdin.readLineSync()!;
+stdout.write("Enter a value: ");
+dynamic value = stdin×readLineSync();
+stdout.write("Enter your country: ");
+final country = stdin.readLineSync()!;
+const pi = 3.14159;
+stdout.write("Enter your phone number (or leave blank): ");
+String? phoneNumber = stdin.readLineSync();
+print("\n========== USER INFORMATION ==========");
+print("Name : $name");
+print("Age : $age");
+print("Salary : $salary");
+print("Student : $isStudent");
+print("Course : $course");
+print("Dynamic Value: $value");
+print("Country : $country");
+print("PI : $pi");
+print("Phone Number : $phoneNumber");
+print("======================================");
+}
+Output:
+Enter your age: 22
+Enter your salary: 50000
+Enter your name: Ajay
+Are you a student? (true/false): false
+Enter your course: MCA
+Enter a value: 30
+Enter your country: India
+Enter your phone number (or leave blank): 98645736357
+========== USER INFORMATION ==========
+Name : Ajay
+Age : 22
+Salary : 50000.0
+Student : false
+Course : MCA
+Dynamic Value: 30
+Country : India
+PI : 3.14159
+Phone Number : 98645736357
+======================================
+Level 2: Develop a Student Information System to store and display
+student details using variables and user input.
+import 'dart:io';
+void main() {
+stdout.write("Enter Student ID: ");
+int studentId = int.parse(stdin.readLineSync()!);
+stdout.write("Enter Student Name: ");
+String name = stdin.readLineSync()!;
+stdout.write("Enter Age: ");
+int age = int.parse(stdin.readLineSync()!);
+stdout.write("Enter Course: ");
+String course = stdin.readLineSync()!;
+stdout.write("Enter CGPA: ");
+double cgpa = double.parse(stdin.readLineSync()!);
+stdout.write("Is the student active? (true/false): ");
+bool isActive = bool.parse(stdin.readLineSync()!);
+print("\n========== STUDENT INFORMATION ==========");
+print("Student ID : $studentId");
+print("Name : $name");
+print("Age : $age");
+print("Course : $course");
+print("CGPA : $cgpa");
+print("Active : $isActive");
+print("=========================================");
+}
+Output:
+Enter Student ID: 123
+Enter Student Name: Ajay
+Enter Age: 23
+Enter Course: MCA
+Enter CGPA: 7.8
+Is the student active? (true/false): true
+========== STUDENT INFORMATION ==========
+Student ID : 123
+Name : Ajay
+Age : 23
+Course : MCA
+CGPA : 7.8
+Active : true
+=========================================
+Lab Sheet – 2
+Level 1: Control Flow in Dart – Implement programs using if-else, switch-
+case, loops, and pattern generation.
+import 'dart:io';
+void main() {
+while (true) {
+print("\n===== PATTERN MENU =====");
+print("1. Right Triangle");
+print("2. Inverted Right Triangle");
+print("3. Square");
+print("4. Pyramid");
+print("5. Number Triangle");
+print("6. Exit");
+stdout.write("Enter your choice: ");
+int choice = int×parse(stdin×readLineSync()!);
+if (choice == 6) {
+print("Thank you! Program exited.");
+break;
+}
+if (choice >= 1 && choice <= 5) {
+stdout.write("Enter the number of rows: ");
+int rows = int×parse(stdin×readLineSync()!);
+switch (choice) {
+case 1:
+print("\nRight Triangle:");
+for (int i = 1; i <= rows; i++) {
+for (int j = 1; j <= i; j++) {
+stdout.write("* ");
+}
+print("");
+}
+break;
+case 2:
+print("\nInverted Right Triangle:");
+for (int i = rows; i >= 1; i--) {
+for (int j = 1; j <= i; j++) {
+stdout.write("* ");
+}
+print("");
+}
+break;
+case 3:
+print("\nSquare:");
+for (int i = 1; i <= rows; i++) {
+for (int j = 1; j <= rows; j++) {
+stdout.write("* ");
+}
+print("");
+}
+break;
+case 4:
+print("\nPyramid:");
+for (int i = 1; i <= rows; i++) {
+for (int j = 1; j <= rows - i; j++) {
+stdout.write(" ");
+}
+for (int j = 1; j <= (2 * i - 1); j++) {
+stdout.write("*");
+}
+print("");
+}
+break;
+case 5:
+print("\nNumber Triangle:");
+for (int i = 1; i <= rows; i++) {
+for (int j = 1; j <= i; j++) {
+stdout.write("$j ");
+}
+print("");
+}
+break;
+}
+} else {
+print("Invalid choice! Please select 1 to 6.");
+}
+}
+}
+Output:
+===== PATTERN MENU =====
+1. Right Triangle
+2. Inverted Right Triangle
+3. Square
+4. Pyramid
+5. Number Triangle
+6. Exit
+Enter your choice: 1
+Enter the number of rows: 5
+Right Triangle:
+*
+* *
+* * *
+* * * *
+* * * * *
+===== PATTERN MENU =====
+1. Right Triangle
+2. Inverted Right Triangle
+3. Square
+4. Pyramid
+5. Number Triangle
+6. Exit
+Enter your choice: 4
+Enter the number of rows: 6
+Pyramid:
+*
+***
+*****
+*******
+*********
+***********
+===== PATTERN MENU =====
+1. Right Triangle
+2. Inverted Right Triangle
+3. Square
+4. Pyramid
+5. Number Triangle
+6. Exit
+Enter your choice: 6
+Thank you! Program exited.
+Level 2: Simple Calculator Application – Create a menu-driven calculator
+using conditional statements and loops.
+import 'dart:io';
+void main() {
+while (true) {
+print("\n===== SIMPLE CALCULATOR =====");
+print("1. Addition");
+print("2. Subtraction");
+print("3. Multiplication");
+print("4. Division");
+print("5. Modulus");
+print("6. Exit");
+stdout.write("Enter your choice: ");
+int choice = int×parse(stdin×readLineSync()!);
+if (choice == 6) {
+print("Calculator Closed. Thank You!");
+break;
+}
+if (choice < 1 || choice > 6) {
+print("Invalid Choice! Please try again.");
+continue;
+}
+stdout.write("Enter First Number: ");
+double num1 = double.parse(stdin.readLineSync()!);
+stdout.write("Enter Second Number: ");
+double num2 = double.parse(stdin.readLineSync()!);
+switch (choice) {
+case 1:
+break;
+print("Result = ${num1 + num2}");
+case 2:
+break;
+print("Result = ${num1 - num2}");
+case 3:
+break;
+print("Result = ${num1 * num2}");
+case 4:
+if (num2 == 0) {
+print("Error: Division by zero is not allowed.");
+} else {
+print("Result = ${num1 / num2}");
+}
+break;
+case 5:
+if (num2 == 0) {
+print("Error: Modulus by zero is not allowed.");
+} else {
+print("Result = ${num1 % num2}");
+}
+break;
+}
+}
+}
+Output:
+===== SIMPLE CALCULATOR =====
+1. Addition
+2. Subtraction
+3. Multiplication
+4. Division
+5. Modulus
+6. Exit
+Enter your choice: 3
+Enter First Number: 7
+Enter Second Number: 16
+Result = 112.0
+Lab Sheet - 3
+Level 1: Functions in Dart – Write Dart programs using user-defined
+functions with parameters and return values.
+import 'dart:io';
+double calculateAnnualSalary(double monthlySalary) {
+return monthlySalary * 12;
+}
+double calculateBonus(double monthlySalary, [double bonusPercentage = 10])
+{
+return monthlySalary * bonusPercentage / 100;
+}
+double calculateTotalSalary({required double annualSalary, double bonus = 0})
+{
+return annualSalary + bonus;
+}
+void main() {
+stdout.write("Enter Employee Name: ");
+String name = stdin.readLineSync()!;
+stdout.write("Enter Employee ID: ");
+int id = int.parse(stdin.readLineSync()!);
+stdout.write("Enter Monthly Salary: ");
+double monthlySalary = double×parse(stdin×readLineSync()!);
+stdout.write("Enter Bonus Percentage: ");
+double bonusPercentage = double.parse(stdin.readLineSync()!);
+// Calling default function
+double annualSalary = calculateAnnualSalary(monthlySalary);
+// Calling function with optional positional parameter
+double bonus = calculateBonus(monthlySalary, bonusPercentage);
+// Calling function with optional named parameters
+double totalSalary = calculateTotalSalary(annualSalary: annualSalary, bonus:
+bonus);
+print("\n========== Employee Salary Details ==========");
+print("Employee ID : $id");
+print("Employee Name : $name");
+print("Monthly Salary : ₹$monthlySalary");
+print("Annual Salary : ₹$annualSalary");
+print("Bonus : ₹$bonus");
+print("Total Salary : ₹$totalSalary");
+print("=============================================");
+}
+Output:
+Enter Employee Name: Arun
+Enter Employee ID: 1234
+Enter Monthly Salary: 50000
+Enter Bonus Percentage: 25
+========== Employee Salary Details ==========
+Employee ID : 1234
+Employee Name : Arun
+Monthly Salary : ₹50000.0
+Annual Salary : ₹600000.0
+Bonus : ₹12500.0
+Total Salary : ₹612500.0
+=============================================
+Level 2: Student Management System – Develop an application using
+classes, objects, constructors, and methods.
+import 'dart:io';
+class Student {
+int rollNo;
+String name;
+String department;
+double marks;
+Student(this.rollNo, this.name, this.department, this.marks);
+String calculateGrade() {
+if (marks >= 90) {
+return "A+";
+} else if (marks >= 80) {
+return "A";
+} else if (marks >= 70) {
+return "B";
+} else if (marks >= 60) {
+return "C";
+} else if (marks >= 50) {
+return "D";
+} else {
+return "F";
+}
+}
+void displayDetails() {
+print("\n---------- Student Details ----------");
+print("Roll Number : $rollNo");
+print("Name : $name");
+print("Department : $department");
+print("Marks : $marks");
+print("Grade : ${calculateGrade()}");
+print("-------------------------------------");
+}
+}
+void main() {
+List<Student> students = [];
+stdout.write("Enter number of students: ");
+int numberOfStudents = int.parse(stdin.readLineSync()!);
+for (int i = 0; i < numberOfStudents; i++) {
+print("\nEnter details for Student ${i + 1}");
+stdout.write("Enter Roll Number: ");
+int rollNo = int.parse(stdin.readLineSync()!);
+stdout.write("Enter Name: ");
+String name = stdin.readLineSync()!;
+stdout.write("Enter Department: ");
+String department = stdin.readLineSync()!;
+stdout.write("Enter Marks: ");
+double marks = double.parse(stdin.readLineSync()!);
+Student student = Student(
+rollNo,
+name,
+department,
+marks,
+);
+students.add(student);
+}
+print("\n========== STUDENT MANAGEMENT SYSTEM
+==========");
+for (Student student in students) {
+student.displayDetails();
+}
+}
+Output:
+Enter number of students: 2
+Enter details for Student 1
+Enter Roll Number: 1234
+Enter Name: Ajay
+Enter Department: MCA
+Enter Marks: 76
+Enter details for Student 2
+Enter Roll Number: 1235
+Enter Name: Arun
+Enter Department: MCA
+Enter Marks: 84
+========== STUDENT MANAGEMENT SYSTEM ==========
+---------- Student Details ----------
+Roll Number : 1234
+Name : Ajay
+Department : MCA
+Marks : 76.0
+Grade : B
+-------------------------------------
+---------- Student Details ----------
+Roll Number : 1235
+Name : Arun
+Department : MCA
+Marks : 84.0
+Grade : A
+-------------------------------------
+Lab Sheet – 4
+Level 1: Flutter Hello World Application – Create your first
+Flutter application displaying text, images, and icons.
+Step 1: Create a New Flutter Project
+In the project creation window:
+1. Select Flutter.
+2. Enter the Flutter SDK path.
+3. Click Next.
+Step 2: Configure the Flutter Project
+1. Use a lowercase name with underscores: flutter
+hello
+world
+_
+_
+2. Choose the location where you want to store the project.
+3. Organization: For academic/lab purposes, you can use - com.example
+4. Click Create
+Step 3: Wait for Project Creation
+Android Studio will create the Flutter project.
+The initial project structure will look approximately like:
+For your beginner Flutter labs, the most important files/folders are:
+Step 4: Understand the Basic Widget Structure
+Step 5: Write the Lab Program
+lib/main.dart:
+import 'package:flutter/material.dart';
+void main() {
+runApp(const MyApp());
+}
+class MyApp extends StatefulWidget {
+const MyApp({super.key});
+@override
+State<MyApp> createState() => _MyAppState();
+}
+class
+_MyAppState extends State<MyApp> {
+String name = '';
+String message = '';
+@override
+Widget build(BuildContext context) {
+return MaterialApp(
+debugShowCheckedModeBanner: false,
+home: Scaffold(
+appBar: AppBar(
+title: const Text('School of Information Science'),
+centerTitle: true,
+),
+body: Padding(
+padding: const EdgeInsets.all(20),
+child: Center(
+child: Column(
+mainAxisAlignment: MainAxisAlignment.center,
+children: [
+// Title
+const Text(
+'Presidency University',
+style: TextStyle(
+fontSize: 28,
+fontWeight: FontWeight.bold,
+),
+),
+const SizedBox(height: 20),
+// Image
+Image.asset(
+'assets/images/presidency_logo.png',
+width: 150,
+height: 150,
+),
+const SizedBox(height: 20),
+// Description
+const Text(
+'Welcome to the Flutter Mobile Application Development Lab.',
+textAlign: TextAlign.center,
+style: TextStyle(fontSize: 18),
+),
+const SizedBox(height: 25),
+// Text Field
+TextField(
+decoration: const InputDecoration(
+labelText: 'Enter your name',
+border: OutlineInputBorder(),
+),
+onChanged: (value) {
+name = value;
+},
+),
+const SizedBox(height: 20),
+// Button
+ElevatedButton(
+onPressed: () {
+setState(() {
+message = 'Hello, $name!';
+});
+},
+child: const Text('Click Here'),
+),
+const SizedBox(height: 20),
+// Message
+Text(
+message,
+style: const TextStyle(
+fontSize: 20,
+fontWeight: FontWeight.bold,
+),
+),
+],
+),
+),
+),
+),
+);
+}
+}
+Output:
+Level 2: Profile Card Application – Design a profile card
+displaying
+user details using Text, Image, Card, and Container widgets.
+Step 1: Create a New Flutter Project
+In the project creation window:
+4. Select Flutter.
+5. Enter the Flutter SDK path.
+6. Click Next.
+Step 2: Configure the Flutter Project
+5. Use a lowercase name with underscores: flutter
+hello
+world
+_
+_
+6. Choose the location where you want to store the project.
+7. Organization: For academic/lab purposes, you can use - com.example
+8. Click Create
+Step 3: Wait for Project Creation
+Android Studio will create the Flutter project.
+The initial project structure will look approximately like:
+For your beginner Flutter labs, the most important files/folders are:
+Step 4: Understand the Basic Widget Structure
+Step 5: Main.dart
+import 'package:flutter/material.dart';
+void main() {
+runApp(const MyApp());
+}
+class MyApp extends StatelessWidget {
+const MyApp({super.key});
+@override
+Widget build(BuildContext context) {
+return MaterialApp(
+debugShowCheckedModeBanner: false,
+home: Scaffold(
+appBar: AppBar(
+title: const Text(
+"Profile Card",
+style: TextStyle(
+fontSize: 28,
+fontWeight: FontWeight.bold,
+),
+),
+centerTitle: true,
+),
+body: Center(
+child: Card(
+elevation: 28,
+child: Container(
+width: 350,
+padding: const EdgeInsets.all(60),
+child: Column(
+mainAxisSize: MainAxisSize.min,
+children: [
+// Profile Image
+Image.asset(
+'assets/images/profile.png',
+width: 120,
+height: 120,
+),
+const SizedBox(height: 20),
+// Name
+const Text(
+"Dinesh N",
+style: TextStyle(
+fontSize: 26,
+fontWeight: FontWeight.bold,
+),
+),
+const SizedBox(height: 10),
+// Designation
+const Text(
+"Assistant Professor",
+style: TextStyle(
+fontSize: 20,
+),
+),
+const SizedBox(height: 10),
+// Department
+const Text(
+"School of Information Science",
+textAlign: TextAlign.center,
+style: TextStyle(
+fontSize: 16,
+),
+),
+const SizedBox(height: 5),
+// University
+const Text(
+"Presidency University, Bengaluru",
+textAlign: TextAlign.center,
+style: TextStyle(
+fontSize: 16,
+),
+),
+const SizedBox(height: 20),
+// Contact Information
+Container(
+padding: const EdgeInsets.all(12),
+decoration: BoxDecoration(
+borderRadius: BorderRadius.circular(10),
+),
+child: const Column(
+children: [
+Text(
+"Email: dinesh@example.com",
+style: TextStyle(fontSize: 15),
+),
+SizedBox(height: 8),
+Text(
+"Mobile: 9876543210",
+style: TextStyle(fontSize: 15),
+),
+],
+),
+),
+],
+),
+),
+),
+),
+),
+);
+}
+}
+Output:
